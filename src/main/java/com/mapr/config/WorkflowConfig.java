@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package net.acesinc.data.json.generator.config;
+package com.mapr.config;
 
 /**
  *

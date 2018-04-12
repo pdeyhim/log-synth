@@ -4,7 +4,9 @@
  * and open the template in the editor.
  */
 
-package net.acesinc.data.json.generator.log;
+package com.mapr.log;
+
+import org.apache.mahout.math.random.Sampler;
 
 import java.util.Map;
 
@@ -13,6 +15,6 @@ import java.util.Map;
  * @author andrewserff
  */
 public interface EventLogger {
-    public void logEvent(String event, Map<String, Object> producerConfig);
+    public void logEvent(Sampler event, Map<String, Object> producerConfig);
     public void shutdown();
 }

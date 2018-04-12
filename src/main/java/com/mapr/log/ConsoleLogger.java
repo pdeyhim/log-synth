@@ -5,25 +5,16 @@
  */
 package com.mapr.log;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.random.Sampler;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
@@ -31,15 +22,15 @@ import java.util.Map;
  *
  * @author andrewserff
  */
-public class StringLogger implements EventLogger {
+public class ConsoleLogger implements EventLogger {
 
-    private static final Logger log = LogManager.getLogger(StringLogger.class);
+    private static final Logger log = LogManager.getLogger(ConsoleLogger.class);
     public static final String URL_PROP_NAME = "url";
 
     private String url;
     private CloseableHttpClient httpClient;
 
-    public StringLogger(Map<String, Object> props) throws NoSuchAlgorithmException {
+    public ConsoleLogger(Map<String, Object> props) throws NoSuchAlgorithmException {
         this.url = (String) props.get(URL_PROP_NAME);
         SSLConnectionSocketFactory sf = new SSLConnectionSocketFactory(SSLContext.getDefault(), new NoopHostnameVerifier());
         this.httpClient = HttpClientBuilder.create().setSSLSocketFactory(sf).build();
@@ -52,7 +43,7 @@ public class StringLogger implements EventLogger {
     
     private void logEvent(Sampler event) {
         try {
-            System.out.printf(event.sample().toString());
+            System.out.println(event.sample().toString());
         } catch (Exception e) {
         }
     }

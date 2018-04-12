@@ -3,14 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package net.acesinc.data.json.generator.log;
+package com.mapr.log;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Map;
-import javax.net.ssl.SSLContext;
 import org.apache.http.HttpEntity;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -18,10 +13,15 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.mahout.math.random.Sampler;
+
+import javax.net.ssl.SSLContext;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 
 /**
  *
@@ -42,14 +42,14 @@ public class HttpPostLogger implements EventLogger {
     }
 
     @Override
-    public void logEvent(String event, Map<String, Object> producerConfig) {
+    public void logEvent(Sampler event, Map<String, Object> producerConfig) {
         logEvent(event);
     }
     
-    private void logEvent(String event) {
+    private void logEvent(Sampler event) {
         try {
             HttpPost request = new HttpPost(url);
-            StringEntity input = new StringEntity(event);
+            StringEntity input = new StringEntity(event.sample().toString());
             input.setContentType("application/json");
             request.setEntity(input);
 
