@@ -67,7 +67,9 @@ import java.io.IOException;
         @JsonSubTypes.Type(value = VinSampler.class, name = "vin"),
         @JsonSubTypes.Type(value = WordSampler.class, name = "word"),
         @JsonSubTypes.Type(value = ZipSampler.class, name = "zip"),
-
+        @JsonSubTypes.Type(value = RandomStringSampler.class, name = "random-string"),
+        @JsonSubTypes.Type(value = SinSampler.class, name = "sin"),
+        @JsonSubTypes.Type(value = CurrentTimeSampler.class, name = "current-time"),
 })
 public abstract class FieldSampler implements Sampler<JsonNode> {
     private String name;
