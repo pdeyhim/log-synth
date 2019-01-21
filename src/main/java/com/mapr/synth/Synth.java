@@ -20,11 +20,15 @@
 package com.mapr.synth;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.mapr.config.JSONConfigReader;
+import com.mapr.config.SimulationConfig;
+import com.mapr.log.EventLogger;
+import com.mapr.log.HttpPostLogger;
+import com.mapr.log.ConsoleLogger;
 import com.mapr.synth.samplers.SchemaSampler;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -38,16 +42,15 @@ import org.kohsuke.args4j.spi.IntOptionHandler;
 import org.kohsuke.args4j.spi.Setter;
 
 import java.io.*;
-import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.security.AccessControlException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -72,7 +75,7 @@ public class Synth {
                     "[-quote DOUBLE_QUOTE|BACK_SLASH|OPTIMISTIC] " +
                     "[-format JSON|TSV|CSV|XML ] " +
                     "[-threads n] " +
-                    "[-output output-directory-name] ");
+                    "[-confDir conf-directory-name] ");
             throw e;
         }
 
@@ -82,19 +85,14 @@ public class Synth {
         Preconditions.checkArgument(opts.template == null || opts.template.exists(),
                 "Please specify a valid template file");
 
+        /*
         if (opts.threads > 1) {
             Preconditions.checkArgument(!"-".equals(opts.output),
                     "If more than on thread is used, you have to use -output to set the output directory");
-        }
+        }*/
 
-        File outputDir = new File(opts.output);
-        if (!"-".equals(opts.output)) {
-            if (!outputDir.exists()) {
-                Preconditions.checkState(outputDir.mkdirs(), String.format("Couldn't create output directory %s", opts.output));
-            }
-            Preconditions.checkArgument(outputDir.exists() && outputDir.isDirectory(),
-                    String.format("Couldn't create directory %s", opts.output));
-        }
+        File confDir = new File(opts.confDir);
+
 
         if (opts.schema == null) {
             throw new IllegalArgumentException("Must specify schema file using [-schema filename] option");
@@ -128,6 +126,7 @@ public class Synth {
         ScheduledExecutorService blinker = Executors.newScheduledThreadPool(1);
         final AtomicBoolean finalRun = new AtomicBoolean(false);
 
+        /*
         final PrintStream sideLog = new PrintStream(new FileOutputStream("side-log"));
         Runnable blink = new Runnable() {
             public double oldT;
@@ -149,20 +148,21 @@ public class Synth {
         };
         if (!"-".equals(opts.output)) {
             blinker.scheduleAtFixedRate(blink, 0, 10, TimeUnit.SECONDS);
-        }
+        }*/
+
         List<Future<Integer>> results = pool.invokeAll(tasks);
 
         int total = 0;
         for (Future<Integer> result : results) {
             total += result.get();
         }
-        Preconditions.checkState(total == opts.count,
-                String.format("Expected to generate %d lines of output, but actually generated %d", opts.count, total));
+//        Preconditions.checkState(total == opts.count,
+//                String.format("Expected to generate %d lines of output, but actually generated %d", opts.count, total));
         pool.shutdownNow();
         blinker.shutdownNow();
         finalRun.set(true);
-        sideLog.close();
-        blink.run();
+       // sideLog.close();
+       // blink.run();
     }
 
     private static class ReportingWorker implements Callable<Integer> {
@@ -182,6 +182,7 @@ public class Synth {
         final AtomicLong lastThreadTime;
         final AtomicLong lastRowCount;
         final Template template;
+        private String simConfigFile;
 
         private static XmlMapper xmlMapper;
         private static XMLStreamWriter sw;
@@ -227,10 +228,54 @@ public class Synth {
             lastUserTime = new AtomicLong(mx.getCurrentThreadUserTime());
             userTime = new AtomicLong(lastThreadTime.get());
             lastRowCount = new AtomicLong(0);
+            simConfigFile = opts.confDir + "SimConfig.json";
+
+        }
+
+        private SimulationConfig getSimConfig() throws IOException {
+            return JSONConfigReader.readConfig(new File(simConfigFile), SimulationConfig.class);
         }
 
         @Override
         public Integer call() throws Exception {
+
+            while(true) {
+                List<EventLogger> loggers = new ArrayList<>();
+                try {
+                    for (Map<String, Object> elProps : getSimConfig().getProducers()) {
+                        String elType = (String) elProps.get("type");
+                        switch (elType) {
+                            case "http-post": {
+                                //log.info("Adding HTTP Post Logger with properties: " + elProps);
+                                try {
+                                    loggers.add(new HttpPostLogger(elProps));
+                                } catch (NoSuchAlgorithmException ex) {
+                                    //log.error("http-post Logger unable to initialize", ex);
+                                }
+                                break;
+                            }
+                            case "console": {
+                                //log.info("Adding HTTP Post Logger with properties: " + elProps);
+                                try {
+                                    loggers.add(new ConsoleLogger(elProps));
+                                } catch (NoSuchAlgorithmException ex) {
+                                    //log.error("http-post Logger unable to initialize", ex);
+                                }
+                                break;
+                            }
+                        }
+
+                    }
+
+                    for (EventLogger l : loggers) {
+                        l.logEvent(sampler, null);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return 0;
+                }
+            }
+            /*
             if ("-".equals(opts.output)) {
                 return generateFile(opts, sampler, template, System.out, localCount);
             } else {
@@ -267,7 +312,7 @@ public class Synth {
                     }
                     return rows;
                 }
-            }
+            }*/
         }
 
         public static void header(Format format, List<String> names, PrintStream out) {
@@ -426,8 +471,8 @@ public class Synth {
     }
 
     private static class Options {
-        @Option(name = "-output")
-        String output = "-";
+        @Option(name = "-confDir")
+        String confDir = "/";
 
         @Option(name = "-threads")
         int threads = 1;

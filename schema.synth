@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [
 {"name":"sin", "class":"sin"},
 {
@@ -9,3 +10,6 @@
        "onlyContinental": "true"
    }
 ]
+=======
+[{"name":"br", "class":"browser"}]
+>>>>>>> b4ff24ef5f862052b2a6298df895990d8f9bcc29
