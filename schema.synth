@@ -1,0 +1,11 @@
+[
+{"name":"sin", "class":"sin"},
+{
+       "name": "z",
+       "class": "zip",
+       "seed": 12,
+       "latitudeFuzz": 1,
+       "longitudeFuzz": 1,
+       "onlyContinental": "true"
+   }
+]

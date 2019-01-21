@@ -24,7 +24,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>log-synth</groupId>
-    <artifactId>log-synth</artifactId>
+    <artifactId>log-synth-parviz</artifactId>
     <version>0.1-SNAPSHOT</version>
 
     <properties>
@@ -34,6 +34,12 @@
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.8</version>
+        </dependency>
         <dependency>
             <groupId>me.lemire.integercompression</groupId>
             <artifactId>JavaFastPFOR</artifactId>
@@ -191,7 +197,7 @@
                     </execution>
                 </executions>
             </plugin>
-
+<!--
             <plugin>
                 <groupId>com.carrotsearch.randomizedtesting</groupId>
                 <artifactId>junit4-maven-plugin</artifactId>
@@ -234,6 +240,7 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
         </plugins>
     </build>
 </project>
